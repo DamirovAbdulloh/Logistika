@@ -1,0 +1,290 @@
+{% extends 'admin/base_admin.html' %}
+{% load humanize %}
+{% block title %}{{ driver.ism }} — Logistika UZ{% endblock %}
+{% block page_title %}{{ driver.ism }}{% endblock %}
+{% block page_subtitle %}{{ driver.telefon }}{% if driver.mashina %} · {{ driver.mashina }}{% endif %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'admin_driver_edit' driver.pk %}" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Tahrirlash</a>
+
+<!-- SMS yuborish tugmasi -->
+<form method="post" action="{% url 'admin_driver_sms' driver.pk %}" style="display:inline"
+      onsubmit="return confirm('{{ driver.ism }} ga SMS yuborilsinmi?\n📱 {{ driver.telefon }}')">
+  {% csrf_token %}
+  <button type="submit"
+          class="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+    📩 SMS yuborish
+  </button>
+</form>
+
+<a href="{% url 'admin_drivers' %}" class="border border-gray-200 text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">← Orqaga</a>
+{% endblock %}
+
+{% block page_content %}
+<!-- Info row -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <!-- Avatar card -->
+  <div class="md:col-span-1 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
+    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-heading font-bold mx-auto mb-3">
+      {{ driver.ism|first }}
+    </div>
+    <p class="font-heading font-bold text-gray-900">{{ driver.ism }}</p>
+    <p class="text-gray-500 text-sm mt-0.5">{{ driver.telefon }}</p>
+    {% if driver.pasport_seriya %}
+    <p class="text-gray-400 text-xs mt-1">🪪 {{ driver.pasport_seriya }}</p>
+    {% endif %}
+    {% if driver.jami_qarz > 0 %}
+    <div class="mt-3 bg-red-50 rounded-lg px-3 py-2">
+      <p class="text-red-600 font-bold text-sm">{{ driver.jami_qarz|intcomma }} so'm</p>
+      <p class="text-red-400 text-xs">jami qarz</p>
+    </div>
+    {% else %}
+    <div class="mt-3 bg-green-50 rounded-lg px-3 py-2">
+      <p class="text-green-600 font-bold text-sm">Qarz yo'q ✅</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick action cards -->
+  <div class="md:col-span-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <a href="{% url 'admin_putyovka_add' %}?driver_id={{ driver.pk }}"
+      class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 hover:bg-yellow-100 transition-colors">
+      <p class="text-2xl mb-1">📄</p>
+      <p class="font-semibold text-gray-800 text-sm">Putyovka</p>
+      <p class="text-xs text-gray-500">{{ driver.putyovkalar.count }} ta mavjud</p>
+    </a>
+    <a href="{% url 'admin_tir_add' %}?driver_id={{ driver.pk }}"
+      class="bg-purple-50 border border-purple-200 rounded-xl p-4 hover:bg-purple-100 transition-colors">
+      <p class="text-2xl mb-1">🚛</p>
+      <p class="font-semibold text-gray-800 text-sm">TIR</p>
+      <p class="text-xs text-gray-500">{{ driver.tirlar.count }} ta mavjud</p>
+    </a>
+    <a href="{% url 'admin_dazvol_add' %}?driver_id={{ driver.pk }}"
+      class="bg-red-50 border border-red-200 rounded-xl p-4 hover:bg-red-100 transition-colors">
+      <p class="text-2xl mb-1">📝</p>
+      <p class="font-semibold text-gray-800 text-sm">Dazvol</p>
+      <p class="text-xs text-gray-500">{{ driver.dazvollar.count }} ta mavjud</p>
+    </a>
+    <a href="{% url 'driver_blanka_word' driver.pk %}"
+      class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 hover:bg-indigo-100 transition-colors">
+      <p class="text-2xl mb-1">📃</p>
+      <p class="font-semibold text-gray-800 text-sm">Blanka (Word)</p>
+      <p class="text-xs text-gray-500">Mehnat shartnomasi</p>
+    </a>
+    <a href="{% url 'driver_doverennost_word' driver.pk %}"
+      class="bg-teal-50 border border-teal-200 rounded-xl p-4 hover:bg-teal-100 transition-colors">
+      <p class="text-2xl mb-1">📋</p>
+      <p class="font-semibold text-gray-800 text-sm">Doverennost</p>
+      <p class="text-xs text-gray-500">Ishonchnoma</p>
+    </a>
+    <a href="{% url 'admin_litsenziya_add' %}?driver_id={{ driver.pk }}"
+      class="bg-cyan-50 border border-cyan-200 rounded-xl p-4 hover:bg-cyan-100 transition-colors">
+      <p class="text-2xl mb-1">🛡</p>
+      <p class="font-semibold text-gray-800 text-sm">Litsenziya</p>
+      <p class="text-xs text-gray-500">{{ driver.litsenziyalar.count }} ta mavjud</p>
+    </a>
+  </div>
+</div>
+
+<!-- Putyovkalar -->
+{% if driver.putyovkalar.all %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+  <div class="px-5 py-3 bg-yellow-50 border-b border-yellow-100 flex items-center justify-between">
+    <h3 class="font-heading font-bold text-gray-900 text-sm">📄 Putyovkalar</h3>
+    <a href="{% url 'admin_putyovka_add' %}?driver_id={{ driver.pk }}" class="text-blue-600 text-xs font-medium hover:underline">+ Qo'shish</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-xs text-gray-500 font-medium">
+          <th class="px-4 py-2 text-left">Raqam</th>
+          <th class="px-4 py-2 text-left">Narxi</th>
+          <th class="px-4 py-2 text-left">Qarz</th>
+          <th class="px-4 py-2 text-left">Muddat</th>
+          <th class="px-4 py-2 text-left">Status</th>
+          <th class="px-4 py-2 text-center">Amal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for p in driver.putyovkalar.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-mono text-xs text-gray-600">{{ p.raqam }}</td>
+          <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ p.narxi|intcomma }}</td>
+          <td class="px-4 py-2 text-xs {% if p.qarz > 0 %}text-red-600 font-semibold{% else %}text-gray-400{% endif %}">{{ p.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-gray-600 text-xs">{{ p.boshlanish|date:"d.m.Y" }} — {{ p.tugash|date:"d.m.Y" }}</td>
+          <td class="px-4 py-2">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full
+              {% if p.status == 'faol' %}bg-green-100 text-green-700
+              {% elif p.status == 'tugagan' %}bg-yellow-100 text-yellow-700
+              {% else %}bg-red-100 text-red-700{% endif %}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td class="px-4 py-2 text-center whitespace-nowrap">
+            <a href="{% url 'putyovka_word' p.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Word</a>
+            <a href="{% url 'admin_putyovka_edit' p.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+            <a href="{% url 'admin_putyovka_tolov' p.pk %}" class="text-green-600 text-xs hover:underline">To'lov</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- TIRlar -->
+{% if driver.tirlar.all %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+  <div class="px-5 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+    <h3 class="font-heading font-bold text-gray-900 text-sm">🚛 TIRlar</h3>
+    <a href="{% url 'admin_tir_add' %}?driver_id={{ driver.pk }}" class="text-blue-600 text-xs font-medium hover:underline">+ Qo'shish</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-xs text-gray-500 font-medium">
+          <th class="px-4 py-2 text-left">TIR raqam</th>
+          <th class="px-4 py-2 text-left">Narxi</th>
+          <th class="px-4 py-2 text-left">Qarz</th>
+          <th class="px-4 py-2 text-left">Muddat</th>
+          <th class="px-4 py-2 text-left">Status</th>
+          <th class="px-4 py-2 text-center">Amal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for t in driver.tirlar.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-mono text-xs text-gray-600">{{ t.tir_raqam }}</td>
+          <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ t.narxi|intcomma }}</td>
+          <td class="px-4 py-2 text-xs {% if t.qarz > 0 %}text-red-600 font-semibold{% else %}text-gray-400{% endif %}">{{ t.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-gray-600 text-xs">{{ t.boshlanish|date:"d.m.Y" }} — {{ t.tugash|date:"d.m.Y" }}</td>
+          <td class="px-4 py-2">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if t.is_expired %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+              {% if t.is_expired %}Tugagan{% else %}Faol{% endif %}
+            </span>
+          </td>
+          <td class="px-4 py-2 text-center whitespace-nowrap">
+            <a href="{% url 'admin_tir_edit' t.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+            <a href="{% url 'admin_tir_delete' t.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Dazvollar -->
+{% if driver.dazvollar.all %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+  <div class="px-5 py-3 bg-red-50 border-b border-red-100 flex items-center justify-between">
+    <h3 class="font-heading font-bold text-gray-900 text-sm">📝 Dazvollar</h3>
+    <a href="{% url 'admin_dazvol_add' %}?driver_id={{ driver.pk }}" class="text-blue-600 text-xs font-medium hover:underline">+ Qo'shish</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-xs text-gray-500 font-medium">
+          <th class="px-4 py-2 text-left">Mamlakat</th>
+          <th class="px-4 py-2 text-left">Narxi</th>
+          <th class="px-4 py-2 text-left">Qarz</th>
+          <th class="px-4 py-2 text-left">Tugash</th>
+          <th class="px-4 py-2 text-center">Amal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for dz in driver.dazvollar.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-semibold text-gray-800 text-xs">{{ dz.mamlakat }}</td>
+          <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ dz.narxi|intcomma }}</td>
+          <td class="px-4 py-2 text-xs {% if dz.qarz > 0 %}text-red-600 font-semibold{% else %}text-gray-400{% endif %}">{{ dz.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-gray-600 text-xs {% if dz.is_expired %}text-red-600 font-semibold{% endif %}">{{ dz.tugash|date:"d.m.Y" }}</td>
+          <td class="px-4 py-2 text-center whitespace-nowrap">
+            <a href="{% url 'admin_dazvol_edit' dz.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+            <a href="{% url 'admin_dazvol_delete' dz.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Litsenziyalar -->
+{% if driver.litsenziyalar.all %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+  <div class="px-5 py-3 bg-cyan-50 border-b border-cyan-100 flex items-center justify-between">
+    <h3 class="font-heading font-bold text-gray-900 text-sm">🛡 Litsenziyalar</h3>
+    <a href="{% url 'admin_litsenziya_add' %}?driver_id={{ driver.pk }}" class="text-blue-600 text-xs font-medium hover:underline">+ Qo'shish</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-xs text-gray-500 font-medium">
+          <th class="px-4 py-2 text-left">Raqam</th>
+          <th class="px-4 py-2 text-left">Narxi</th>
+          <th class="px-4 py-2 text-left">Qarz</th>
+          <th class="px-4 py-2 text-left">Tugash</th>
+          <th class="px-4 py-2 text-center">Amal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for l in driver.litsenziyalar.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-semibold text-gray-800 text-xs">{{ l.litsenziya_raqam }}</td>
+          <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ l.narxi|intcomma }}</td>
+          <td class="px-4 py-2 text-xs {% if l.qarz > 0 %}text-red-600 font-semibold{% else %}text-gray-400{% endif %}">{{ l.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-gray-600 text-xs {% if l.is_expired %}text-red-600 font-semibold{% endif %}">{{ l.tugash|date:"d.m.Y" }}</td>
+          <td class="px-4 py-2 text-center whitespace-nowrap">
+            <a href="{% url 'admin_litsenziya_edit' l.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+            <a href="{% url 'admin_litsenziya_delete' l.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Ijara shartnomalari -->
+{% if driver.ijara_shartnomalari.all %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+  <div class="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between">
+    <h3 class="font-heading font-bold text-gray-900 text-sm">🏠 Ijara shartnomalari</h3>
+    <a href="{% url 'admin_ijara_add' %}?driver_id={{ driver.pk }}" class="text-blue-600 text-xs font-medium hover:underline">+ Qo'shish</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-xs text-gray-500 font-medium">
+          <th class="px-4 py-2 text-left">Manzil</th>
+          <th class="px-4 py-2 text-left">Narxi</th>
+          <th class="px-4 py-2 text-left">Qarz</th>
+          <th class="px-4 py-2 text-left">Tugash</th>
+          <th class="px-4 py-2 text-center">Amal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for ij in driver.ijara_shartnomalari.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-semibold text-gray-800 text-xs">{{ ij.manzil }}</td>
+          <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ ij.narxi|intcomma }}</td>
+          <td class="px-4 py-2 text-xs {% if ij.qarz > 0 %}text-red-600 font-semibold{% else %}text-gray-400{% endif %}">{{ ij.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-gray-600 text-xs {% if ij.is_expired %}text-red-600 font-semibold{% endif %}">{{ ij.tugash|date:"d.m.Y" }}</td>
+          <td class="px-4 py-2 text-center whitespace-nowrap">
+            <a href="{% url 'admin_ijara_edit' ij.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+            <a href="{% url 'admin_ijara_delete' ij.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

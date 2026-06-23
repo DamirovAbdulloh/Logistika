@@ -1,0 +1,297 @@
+{% extends 'admin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Haydovchilar{% endblock %}
+{% block page_title %}Haydovchilar{% endblock %}
+{% block page_subtitle %}Jami: {{ drivers.paginator.count }} ta{% endblock %}
+{% block header_actions %}
+<a href="{% url 'admin_driver_add' %}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+  + Haydovchi qo'shish
+</a>
+<a href="{% url 'admin_add_admin' %}" class="bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+  + Admin qo'shish
+</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 170px;
+  z-index: 100;
+  overflow: hidden;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu a,
+.dropdown-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: #374151;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s;
+}
+.dropdown-menu a:hover,
+.dropdown-menu button:hover { background: #f3f4f6; }
+.dropdown-menu .sep { height: 1px; background: #f3f4f6; margin: 3px 0; }
+.dropdown-menu .danger { color: #dc2626; }
+.dropdown-menu .danger:hover { background: #fef2f2; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-green  { background: #22c55e; }
+.dot-gray   { background: #9ca3af; }
+tr.hidden-row { display: none; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<!-- Summary -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+  <div class="bg-gray-900 rounded-xl p-4 text-white">
+    <p class="text-xs text-gray-400">Jami hujjatlar</p>
+    <p class="text-2xl font-heading font-bold mt-1">{{ summary.jami }}</p>
+  </div>
+  <div class="bg-green-600 rounded-xl p-4 text-white">
+    <p class="text-xs text-green-100">Jami to'langan</p>
+    <p class="text-xl font-heading font-bold mt-1">{{ summary.tolangan|intcomma }}</p>
+  </div>
+  <div class="bg-red-600 rounded-xl p-4 text-white">
+    <p class="text-xs text-red-100">Jami qarz</p>
+    <p class="text-xl font-heading font-bold mt-1">{{ summary.qarz|intcomma }}</p>
+  </div>
+  <div class="bg-white rounded-xl p-4 border border-gray-200">
+    <p class="text-xs text-gray-500 flex items-center gap-1">
+      <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span> Aktiv
+    </p>
+    <p class="text-2xl font-heading font-bold text-gray-900 mt-1">{{ summary.aktiv }}</p>
+  </div>
+</div>
+
+<!-- Real-time Search -->
+<div class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-3 mb-4">
+  <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+  </svg>
+  <input type="text" id="live-search" value="{{ search_q }}" placeholder="Ism yoki telefon bo'yicha qidiring..."
+    class="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400"
+    oninput="liveSearch(this.value)">
+  <span id="search-count" class="text-xs text-gray-400"></span>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm" id="drivers-table">
+      <thead class="bg-gray-900 text-white">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold">ID</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold">Ism</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold">Telefon</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold">Mashina</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold">Raqam</th>
+          <th class="px-4 py-3 text-center text-xs font-semibold">Amallar</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50" id="drivers-tbody">
+        {% for d in drivers %}
+        <tr class="hover:bg-gray-50 transition-colors driver-row"
+          data-name="{{ d.ism|lower }}"
+          data-phone="{{ d.telefon|lower }}">
+          <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ d.id }}</td>
+          <td class="px-4 py-3 font-semibold text-gray-800">
+            <a href="{% url 'admin_driver_detail' d.pk %}" class="hover:text-blue-600">{{ d.ism }}</a>
+          </td>
+          <td class="px-4 py-3 text-gray-600 text-xs">{{ d.telefon }}</td>
+          <td class="px-4 py-3 text-gray-600 text-xs">{{ d.mashina|default:"—" }}</td>
+          <td class="px-4 py-3 text-gray-600 text-xs font-mono">{{ d.raqam|default:"—" }}</td>
+          <td class="px-4 py-3 text-center">
+            <div class="dropdown" id="dd-{{ d.pk }}">
+              <button onclick="toggleDd({{ d.pk }})"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all mx-auto">
+                <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <rect x="2" y="4"  width="16" height="1.8" rx="1"/>
+                  <rect x="2" y="9"  width="16" height="1.8" rx="1"/>
+                  <rect x="2" y="14" width="16" height="1.8" rx="1"/>
+                </svg>
+              </button>
+              <div class="dropdown-menu" id="menu-{{ d.pk }}">
+                <a href="{% url 'admin_putyovka_add' %}?driver_id={{ d.pk }}">
+                  <span class="dot {% if d.aktiv_putyovka %}dot-green{% else %}dot-gray{% endif %}"></span>Putyovka
+                </a>
+                <a href="{% url 'admin_tir_add' %}?driver_id={{ d.pk }}"  >
+                  <span class="dot {% if d.aktiv_tir %}dot-green{% else %}dot-gray{% endif %}"></span>TIR
+                </a>
+                <a href="{% url 'admin_dazvol_add' %}?driver_id={{ d.pk }}"  >
+                  <span class="dot {% if d.aktiv_dazvol %}dot-green{% else %}dot-gray{% endif %}"></span>Dazvol
+                </a>
+                <a href="{% url 'admin_litsenziya_add' %}?driver_id={{ d.pk }}"  >
+                  <span class="dot {% if d.aktiv_litsenziya %}dot-green{% else %}dot-gray{% endif %}"></span>Litsenziya
+                </a>
+                <a href="{% url 'admin_ijara_add' %}?driver_id={{ d.pk }}"  >
+                  <span class="dot {% if d.aktiv_ijara %}dot-green{% else %}dot-gray{% endif %}"></span>Ijara (Rent)
+                </a>
+                <div class="sep"></div>
+                <a href="{% url 'admin_driver_detail' d.pk %}">
+                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  Ko'rish
+                </a>
+                <a href="{% url 'admin_driver_edit' d.pk %}">
+                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Tahrirlash
+                </a>
+                <div class="sep"></div>
+                <a href="{% url 'driver_blanka_word' d.pk %}">
+                  <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Blanka (Word)
+                </a>
+                <button onclick="openDoverModal({{ d.pk }}, '{{ d.ism|escapejs }}', '{{ d.pasport_seriya|default:''|escapejs }}')">
+                  <svg class="w-3.5 h-3.5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Doverennost (Word)
+                </button>
+                <div class="sep"></div>
+                <button class="danger" onclick="closeDd({{ d.pk }}); doDelete('{% url 'admin_driver_delete' d.pk %}')">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+
+                  O'chirish
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr id="empty-row">
+          <td colspan="6" class="px-4 py-10 text-center text-gray-400">Haydovchilar topilmadi</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- No results message -->
+<div id="no-results" class="hidden text-center py-10 text-gray-400 text-sm">Qidiruv natijasi topilmadi</div>
+
+{% include 'admin/_pagination.html' with page_obj=drivers %}
+
+<!-- Delete modal -->
+<div id="delModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 w-72 shadow-2xl">
+    <h3 class="font-heading font-bold text-gray-900 mb-2">O'chirishni tasdiqlang</h3>
+    <p class="text-gray-500 text-sm mb-5">Haydovchi va barcha hujjatlari o'chiriladi!</p>
+    <div class="flex gap-3">
+      <button onclick="document.getElementById('delModal').classList.add('hidden')"
+        class="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm">Bekor</button>
+      <a id="delLink" class="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium text-center">O'chirish</a>
+    </div>
+  </div>
+</div>
+
+<!-- Doverennost modal -->
+<div id="doverModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+    <h3 class="font-heading font-bold text-gray-900 mb-1">Doverennost yaratish</h3>
+    <p id="doverDriverName" class="text-gray-500 text-xs mb-4"></p>
+    <form id="doverForm" method="GET">
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Pasport seriya va raqami</label>
+          <input type="text" name="pasport" id="doverPasport" placeholder="AA 1234567"
+                 class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Boshlanish sanasi</label>
+            <input type="date" name="start" id="doverStart" required
+                   class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Tugash sanasi</label>
+            <input type="date" name="end" id="doverEnd" required
+                   class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button type="button" onclick="document.getElementById('doverModal').classList.add('hidden')"
+          class="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm">Bekor</button>
+        <button type="submit" class="flex-1 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700">
+          Yuklab olish
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+function toggleDd(id) {
+  var menu = document.getElementById('menu-' + id);
+  var isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.remove('open'); });
+  if (!isOpen) menu.classList.add('open');
+}
+function closeDd(id) { document.getElementById('menu-' + id).classList.remove('open'); }
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+function doDelete(url) {
+  document.getElementById('delLink').href = url;
+  document.getElementById('delModal').classList.remove('hidden');
+}
+
+function openDoverModal(driverId, driverName, pasport) {
+  document.getElementById('doverDriverName').textContent = driverName;
+  document.getElementById('doverPasport').value = pasport || '';
+  var today = new Date();
+  var end = new Date(today); end.setFullYear(end.getFullYear() + 3); end.setDate(end.getDate() - 1);
+  function fmt(d) { return d.toISOString().slice(0,10); }
+  document.getElementById('doverStart').value = fmt(today);
+  document.getElementById('doverEnd').value = fmt(end);
+  document.getElementById('doverForm').action = '/admin/drivers/' + driverId + '/doverennost/';
+  document.querySelectorAll('.dropdown-menu').forEach(function(m){m.classList.remove('open');});
+  document.getElementById('doverModal').classList.remove('hidden');
+}
+
+
+// Real-time qidiruv
+function liveSearch(q) {
+  var val = q.toLowerCase().trim();
+  var rows = document.querySelectorAll('.driver-row');
+  var visible = 0;
+  rows.forEach(function(row) {
+    var name = row.getAttribute('data-name') || '';
+    var phone = row.getAttribute('data-phone') || '';
+    var match = !val || name.includes(val) || phone.includes(val);
+    row.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  var countEl = document.getElementById('search-count');
+  if (val) {
+    countEl.textContent = visible + ' ta topildi';
+  } else {
+    countEl.textContent = '';
+  }
+  var noRes = document.getElementById('no-results');
+  if (noRes) noRes.classList.toggle('hidden', visible > 0 || !val);
+}
+
+// Sahifa yuklanganda agar qidiruv qiymati bo'lsa
+var initQ = document.getElementById('live-search').value;
+if (initQ) liveSearch(initQ);
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.pyc
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+*.sqlite3
+db.sqlite3
+/staticfiles/
+/media/
+/static/css/.gitkeep
+
+# Environment variables - MAXFIY!
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Import skriptlar (production'ga kerak emas)
+import_data_fixed.py
+setup.py
+db.sqlite3

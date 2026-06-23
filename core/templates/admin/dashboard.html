@@ -1,0 +1,187 @@
+{% extends 'admin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Dashboard — Logistika UZ{% endblock %}
+{% block page_title %}Salom, {{ request.user.username }}! 👋{% endblock %}
+{% block page_subtitle %}
+  Tizim umumiy holati &nbsp;·&nbsp;
+  <span id="live-date"></span>
+  <script>
+    var d = new Date();
+    var months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+    document.getElementById('live-date').textContent = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  </script>
+{% endblock %}
+
+{% block page_content %}
+
+<!-- Muddati tugagan hujjatlar alert -->
+{% if expired_docs %}
+<div class="mb-5 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+  <span class="text-red-500 text-xl flex-shrink-0">🚨</span>
+  <div class="flex-1">
+    <p class="text-red-700 font-semibold text-sm">{{ expired_docs|length }} ta hujjat muddati tugagan!</p>
+    <div class="flex flex-wrap gap-2 mt-2">
+      {% for doc in expired_docs %}
+      <a href="{% url 'admin_driver_detail' doc.driver_id %}"
+        class="bg-red-100 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full hover:bg-red-200 transition-colors">
+        {{ doc.ism }} — {{ doc.tur }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+  {% for item in stat_cards %}
+  <a href="{{ item.url|default:'#' }}"
+    class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all block">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-xl" style="background:{{ item.bg }}">{{ item.icon }}</div>
+    <p class="text-2xl font-heading font-bold text-gray-900">{{ item.value }}</p>
+    <p class="text-xs text-gray-500 mt-0.5">{{ item.label }}</p>
+    {% if item.expired %}
+    <p class="text-xs text-red-500 font-medium mt-1">Tugagan: {{ item.expired }}</p>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- ============ KIRIM (INCOME) ============ -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+  <div class="bg-gradient-to-r from-emerald-500 to-green-600 px-5 py-3 flex items-center gap-2">
+    <span class="text-white text-lg">💰</span>
+    <h2 class="text-white font-heading font-bold text-sm">Kirim (To'lovlar)</h2>
+  </div>
+  <div class="p-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+        <p class="text-xs text-emerald-700 font-medium">Bugungi kirim</p>
+        <p class="text-2xl font-heading font-bold text-emerald-700 mt-1">{{ kirim.kunlik|intcomma }} <span class="text-sm font-normal">so'm</span></p>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p class="text-xs text-blue-700 font-medium">Joriy oy kirimi</p>
+        <p class="text-2xl font-heading font-bold text-blue-700 mt-1">{{ kirim.oylik|intcomma }} <span class="text-sm font-normal">so'm</span></p>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-4 text-white">
+        <p class="text-xs text-gray-300 font-medium">Jami kirim</p>
+        <p class="text-2xl font-heading font-bold mt-1">{{ kirim.jami|intcomma }} <span class="text-sm font-normal">so'm</span></p>
+      </div>
+    </div>
+
+    <!-- Oxirgi 7 kun bars -->
+    <p class="text-xs text-gray-500 mb-2 font-medium">Oxirgi 7 kun</p>
+    <div class="flex items-end gap-2 h-24 mb-4">
+      {% for k in kunlik_kirimlar %}
+      <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="w-full bg-emerald-100 rounded-t-md relative" style="height: {% if kirim.oylik %}{% widthratio k.summa kirim.oylik 100 %}{% else %}0{% endif %}%; min-height: 4px;">
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-gray-600 whitespace-nowrap">{{ k.summa|intcomma }}</div>
+        </div>
+        <p class="text-[10px] text-gray-400">{{ k.sana }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Oxirgi kirimlar -->
+    {% if oxirgi_kirimlar %}
+    <div class="border-t border-gray-100 pt-3">
+      <p class="text-xs text-gray-500 mb-2 font-medium">Oxirgi to'lovlar</p>
+      <div class="divide-y divide-gray-50">
+        {% for k in oxirgi_kirimlar %}
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <p class="text-sm font-medium text-gray-800">{{ k.driver.ism }}</p>
+            <p class="text-xs text-gray-400">{{ k.tur|capfirst }} · {{ k.sana|date:"d.m.Y" }}</p>
+          </div>
+          <span class="text-emerald-600 font-bold text-sm">+{{ k.summa|intcomma }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ HAYDOVCHI BO'LIMI ============ -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+  <div class="bg-gray-900 px-5 py-3 flex items-center gap-2">
+    <span class="text-white text-lg">🚚</span>
+    <h2 class="text-white font-heading font-bold text-sm">Haydovchilar (qarz, to'langan, aktiv hujjatlar)</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-600">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-semibold">Haydovchi</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold">Mashina</th>
+          <th class="px-4 py-2 text-right text-xs font-semibold">Qarz</th>
+          <th class="px-4 py-2 text-right text-xs font-semibold">To'langan</th>
+          <th class="px-4 py-2 text-center text-xs font-semibold">Aktiv hujjat</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for h in haydovchi_top %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2"><a href="{% url 'admin_driver_detail' h.id %}" class="font-semibold text-gray-800 hover:text-blue-600">{{ h.ism }}</a></td>
+          <td class="px-4 py-2 text-gray-500 text-xs">{{ h.mashina|default:"—" }}</td>
+          <td class="px-4 py-2 text-right text-xs {% if h.qarz > 0 %}text-red-600 font-bold{% else %}text-gray-400{% endif %}">{{ h.qarz|intcomma }}</td>
+          <td class="px-4 py-2 text-right text-xs text-green-600 font-semibold">{{ h.tolangan|intcomma }}</td>
+          <td class="px-4 py-2 text-center">
+            <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ h.aktiv }}</span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm">Haydovchilar yo'q</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Two columns -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+  <!-- Qarzdorlar -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-red-500 px-5 py-3 flex items-center gap-2">
+      <span class="text-white">🔥</span>
+      <h2 class="text-white font-heading font-bold text-sm">Eng katta qarzdorlar</h2>
+    </div>
+    <div class="divide-y divide-gray-50">
+      {% for q in qarzdorlar %}
+      <div class="flex items-center justify-between px-5 py-2.5">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ q.ism }}</p>
+          <p class="text-xs text-gray-400">Umumiy</p>
+        </div>
+        <span class="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1 rounded-full">
+          {{ q.qarz|intcomma }} so'm
+        </span>
+      </div>
+      {% empty %}
+      <p class="px-5 py-6 text-gray-400 text-sm text-center">Qarzdorlar yo'q ✅</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Muddati yaqin -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-yellow-400 px-5 py-3 flex items-center gap-2">
+      <span class="text-white">⏰</span>
+      <h2 class="text-white font-heading font-bold text-sm">Muddati tugashiga yaqin (7 kun)</h2>
+    </div>
+    <div class="divide-y divide-gray-50">
+      {% for h in muddati_yaqin %}
+      <div class="flex items-center justify-between px-5 py-2.5">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ h.ism }}</p>
+          <p class="text-xs text-gray-400">{{ h.tur }}</p>
+        </div>
+        <span class="bg-yellow-50 text-yellow-700 text-xs font-bold px-2.5 py-1 rounded-full">{{ h.sana }}</span>
+      </div>
+      {% empty %}
+      <p class="px-5 py-6 text-gray-400 text-sm text-center">Muddati yaqin hujjat yo'q ✅</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin qo'shish{% endblock %}
+{% block page_title %}Adminlar boshqaruvi{% endblock %}
+{% block page_subtitle %}Tizimga yangi admin qo'shish{% endblock %}
+
+{% block page_content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Yangi admin qo'shish -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <h2 class="font-heading font-bold text-gray-900 mb-5 flex items-center gap-2">
+      <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+      Yangi Admin qo'shish
+    </h2>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Login <span class="text-red-500">*</span></label>
+        <input type="text" name="username" required placeholder="superadmin"
+          class="form-input" autocomplete="off">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" name="email" placeholder="admin@logistika.uz"
+          class="form-input">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Parol <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input type="password" name="password" id="pwdInput" required placeholder="Kuchli parol kiriting"
+            class="form-input pr-10" autocomplete="new-password">
+          <button type="button" onclick="togglePwd()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <svg id="eyeIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Kamida 8 ta belgi tavsiya etiladi</p>
+      </div>
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors mt-2">
+        Admin qo'shish →
+      </button>
+    </form>
+  </div>
+
+  <!-- Mavjud adminlar ro'yxati -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-heading font-bold text-gray-900">Mavjud adminlar</h2>
+      <span class="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-1 rounded-full">
+        {{ admins.count }} ta
+      </span>
+    </div>
+    <div class="divide-y divide-gray-50">
+      {% for admin in admins %}
+      <div class="flex items-center justify-between px-6 py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+            {{ admin.username|first|upper }}
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-800">
+              {{ admin.username }}
+              {% if admin.pk == request.user.pk %}
+              <span class="text-blue-500 text-xs font-normal">(siz)</span>
+              {% endif %}
+            </p>
+            <p class="text-xs text-gray-400">
+              {{ admin.email|default:"email yo'q" }} ·
+              {{ admin.date_joined|date:"d.m.Y" }}
+            </p>
+          </div>
+        </div>
+        {% if admin.pk != request.user.pk %}
+        <a href="{% url 'admin_delete_admin' admin.pk %}"
+          onclick="return confirm('{{ admin.username }} adminni o\'chirishni tasdiqlaysizmi?')"
+          class="text-red-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-red-50">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </a>
+        {% else %}
+        <span class="text-xs text-gray-300 px-2">—</span>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="px-6 py-8 text-center text-gray-400 text-sm">Adminlar topilmadi</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePwd() {
+  const inp = document.getElementById('pwdInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+</script>
+{% endblock %}

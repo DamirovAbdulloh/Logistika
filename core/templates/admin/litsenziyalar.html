@@ -1,0 +1,66 @@
+{% extends 'admin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Litsenziyalar{% endblock %}
+{% block page_title %}Litsenziyalar{% endblock %}
+{% block page_subtitle %}Jami: {{ litsenziyalar.paginator.count }} ta{% endblock %}
+{% block header_actions %}
+<a href="{% url 'admin_litsenziya_add' %}" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700">+ Litsenziya qo'shish</a>
+{% endblock %}
+{% block page_content %}
+<form method="GET" class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex gap-3 mb-4">
+  <input type="text" name="q" value="{{ search_q }}" placeholder="Driver yoki litsenziya raqami..." class="flex-1 text-sm outline-none text-gray-700">
+  <button type="submit" class="text-blue-600 text-sm font-medium">Qidirish</button>
+</form>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"><div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-800 text-white"><tr>
+      <th class="px-4 py-3 text-left text-xs">Driver</th>
+      <th class="px-4 py-3 text-left text-xs">Litsenziya raqam</th>
+      <th class="px-4 py-3 text-left text-xs">Narxi</th>
+      <th class="px-4 py-3 text-left text-xs">Boshlanish</th>
+      <th class="px-4 py-3 text-left text-xs">Tugash</th>
+      <th class="px-4 py-3 text-center text-xs">Status</th>
+      <th class="px-4 py-3 text-center text-xs">Amal</th>
+    </tr></thead>
+    <tbody class="divide-y divide-gray-50">
+    {% for l in litsenziyalar %}
+    <tr class="hover:bg-gray-50">
+      <td class="px-4 py-2 font-semibold text-gray-800 text-xs"><a href="{% url 'admin_driver_detail' l.driver.pk %}" class="hover:text-blue-600">{{ l.driver.ism }}</a></td>
+      <td class="px-4 py-2 font-mono text-gray-600 text-xs">{{ l.litsenziya_raqam }}</td>
+      <td class="px-4 py-2 text-green-600 font-semibold text-xs">{{ l.narxi|intcomma }}</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">{{ l.boshlanish|date:"d.m.Y" }}</td>
+      <td class="px-4 py-2 text-xs {% if l.is_expired %}text-red-600 font-semibold{% else %}text-gray-500{% endif %}">{{ l.tugash|date:"d.m.Y" }}</td>
+      <td class="px-4 py-2 text-center">
+        <div class="flex flex-col items-center gap-1">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if l.status == 'tugagan' %}bg-yellow-100 text-yellow-700{% elif l.is_expired %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ l.get_status_display }}
+          </span>
+          {% if l.status == 'tugagan' %}
+            <a href="{% url 'admin_litsenziya_activate' l.pk %}" onclick="return confirm('Faollashtirilsinmi?')"
+               class="text-[10px] px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700">▶ Faollashtirish</a>
+          {% else %}
+            <a href="{% url 'admin_litsenziya_finish' l.pk %}" onclick="return confirm('Tugatilsinmi?')"
+               class="text-[10px] px-2 py-0.5 rounded bg-yellow-500 text-white hover:bg-yellow-600">■ Tugatish</a>
+          {% endif %}
+        </div>
+      </td>
+
+      <td class="px-4 py-2 text-center">
+        <a href="{% url 'admin_litsenziya_edit' l.pk %}" class="text-blue-600 text-xs hover:underline mr-2">Edit</a>
+        {% if l.status == 'tugagan' %}<a href="{% url 'admin_litsenziya_activate' l.pk %}" class="text-green-600 text-xs hover:underline mr-2" onclick="return confirm('Faollashtirilsinmi?')">Faollashtirish</a>{% else %}<a href="{% url 'admin_litsenziya_finish' l.pk %}" class="text-yellow-600 text-xs hover:underline mr-2" onclick="return confirm('Tugatilsinmi?')">Tugatish</a>{% endif %}
+        {% if l.qarz > 0 %}<a href="{% url 'admin_litsenziya_tolov' l.pk %}" class="text-green-600 text-xs hover:underline mr-2">To'lov qilish</a>{% endif %}
+        <a href="{% url 'admin_litsenziya_delete' l.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">Litsenziyalar topilmadi</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% include 'admin/_pagination.html' with page_obj=litsenziyalar %}
+{% endblock %}
+
+<!-- payment link -->
+{% comment %} admin_litsenziya_tolov {% endcomment %}

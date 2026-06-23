@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Mening hujjatlarim — {{ driver.ism }}{% endblock %}
+{% block extra_head %}
+<style>
+.driver-bg{background:linear-gradient(135deg,#0f2440 0%,#1e3a5f 100%);min-height:100vh;}
+.doc-card{transition:transform .2s,box-shadow .2s;}
+.doc-card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(0,0,0,.12);}
+.badge-faol{background:#dcfce7;color:#16a34a;}
+.badge-tugagan{background:#fef9c3;color:#a16207;}
+.badge-qarzli{background:#fee2e2;color:#dc2626;}
+.badge-yoq{background:#f1f5f9;color:#94a3b8;}
+@keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:.7}}
+.warn-pulse{animation:pulse-warn 2s ease-in-out infinite;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="driver-bg">
+
+  <!-- Header -->
+  <header class="border-b border-white/10 px-4 sm:px-6 py-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4"/>
+          </svg>
+        </div>
+        <span class="text-white font-heading font-bold">Logistika UZ</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-right">
+          <p class="text-white font-semibold text-sm">{{ driver.ism }}</p>
+          <p class="text-blue-300 text-xs">{{ driver.telefon }}</p>
+        </div>
+        <a href="{% url 'logout' %}" class="text-red-400 hover:text-red-300 text-xs transition-colors">Chiqish</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- Muddati yaqin ogohlantirish -->
+    {% if expiring_soon %}
+    <div class="warn-pulse mb-5 bg-yellow-400/20 border border-yellow-400/40 rounded-2xl px-5 py-4 flex items-start gap-3">
+      <span class="text-yellow-300 text-xl flex-shrink-0">⚠️</span>
+      <div>
+        <p class="text-yellow-200 font-semibold text-sm mb-1">Hujjat muddati tugayapti!</p>
+        {% for doc in expiring_soon %}
+        <p class="text-yellow-300/80 text-xs">• {{ doc.tur }}: <span class="font-bold text-yellow-200">{{ doc.kun }} kun</span> qoldi ({{ doc.sana }})</p>
+        {% endfor %}
+        <p class="text-yellow-400/60 text-xs mt-2">Iltimos, admin bilan bog'laning: <span class="text-yellow-300 font-medium">{{ admin_phone|default:"+998 90 000 00 00" }}</span></p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Muddati o'tgan hujjatlar -->
+    {% if expired_docs %}
+    <div class="mb-5 bg-red-500/20 border border-red-500/40 rounded-2xl px-5 py-4 flex items-start gap-3">
+      <span class="text-red-300 text-xl flex-shrink-0">🚨</span>
+      <div>
+        <p class="text-red-200 font-semibold text-sm mb-1">Muddati tugagan hujjatlar mavjud!</p>
+        {% for doc in expired_docs %}
+        <p class="text-red-300/80 text-xs">• {{ doc.tur }} muddati tugagan ({{ doc.sana }})</p>
+        {% endfor %}
+        <p class="text-red-400/70 text-xs mt-2">Zudlik bilan admin bilan bog'laning: <span class="text-red-200 font-medium">{{ admin_phone|default:"+998 90 000 00 00" }}</span></p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Profile -->
+    <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 sm:p-5 mb-7 flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-5">
+      <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-heading font-bold shadow-lg flex-shrink-0">
+        {{ driver.ism|first }}
+      </div>
+      <div class="flex-1">
+        <h2 class="text-white font-heading font-bold text-lg">{{ driver.ism }}</h2>
+        <div class="flex flex-wrap gap-4 mt-1 text-blue-200 text-xs">
+          <span>📞 {{ driver.telefon }}</span>
+          {% if driver.mashina %}<span>🚛 {{ driver.mashina }}</span>{% endif %}
+          {% if driver.raqam %}<span>🔢 {{ driver.raqam }}</span>{% endif %}
+        </div>
+      </div>
+      {% if driver.jami_qarz > 0 %}
+      <div class="bg-red-500/20 border border-red-400/30 rounded-xl px-4 py-3 text-center flex-shrink-0">
+        <p class="text-red-200 text-xs">Jami qarz</p>
+        <p class="text-red-100 font-heading font-bold">{{ driver.jami_qarz|intcomma }}</p>
+        <p class="text-red-300 text-xs">so'm</p>
+        <a href="tel:{{ admin_phone|default:'+998900000000' }}"
+          class="mt-2 block bg-red-500/30 hover:bg-red-500/50 text-red-100 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+          📞 Bog'lanish
+        </a>
+      </div>
+      {% else %}
+      <div class="bg-green-500/20 border border-green-400/30 rounded-xl px-4 py-3 text-center flex-shrink-0">
+        <p class="text-green-200 text-xs">Qarz</p>
+        <p class="text-green-100 font-heading font-bold text-lg">0 ✅</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Hujjatlar -->
+    <h3 class="text-white font-heading font-bold text-base mb-4">Mening hujjatlarim</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Putyovka -->
+      <div class="doc-card bg-white rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-xl">📄</div>
+            <h4 class="font-heading font-bold text-gray-900">Putyovka</h4>
+          </div>
+          {% with p=driver.aktiv_putyovka %}
+          {% if p %}
+          <span class="badge-{% if p.status == 'faol' %}faol{% elif p.status == 'tugagan' %}tugagan{% else %}qarzli{% endif %} text-xs font-bold px-3 py-1 rounded-full">{{ p.get_status_display }}</span>
+          {% else %}<span class="badge-yoq text-xs font-bold px-3 py-1 rounded-full">Yo'q</span>{% endif %}
+          {% endwith %}
+        </div>
+        {% with p=driver.aktiv_putyovka %}
+        {% if p %}
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600"><span>Boshlanish:</span><span class="font-medium">{{ p.boshlanish|date:"d.m.Y" }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Tugash:</span><span class="font-medium {% if p.is_expired %}text-red-600{% endif %}">{{ p.tugash|date:"d.m.Y" }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Narxi:</span><span class="font-bold text-green-600">{{ p.narxi|intcomma }} so'm</span></div>
+          {% if p.qarz > 0 %}<div class="flex justify-between text-gray-600"><span>Qarz:</span><span class="font-bold text-red-600">{{ p.qarz|intcomma }} so'm</span></div>{% endif %}
+          <div class="mt-3">
+            <div class="flex justify-between text-xs text-gray-400 mb-1"><span>Muddat holati</span><span>{{ p.days_remaining }} kun qoldi</span></div>
+            <div class="bg-gray-100 rounded-full h-1.5"><div class="{% if p.days_remaining <= 7 %}bg-red-400{% elif p.days_remaining <= 14 %}bg-yellow-400{% else %}bg-blue-500{% endif %} rounded-full h-1.5" style="width:{{ p.progress }}%"></div></div>
+          </div>
+        </div>
+        {% else %}<p class="text-gray-400 text-sm text-center py-4">Putyovka yo'q</p>{% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- TIR -->
+      <div class="doc-card bg-white rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-xl">🚛</div>
+            <h4 class="font-heading font-bold text-gray-900">TIR</h4>
+          </div>
+          {% with t=driver.aktiv_tir %}
+          {% if t %}<span class="badge-faol text-xs font-bold px-3 py-1 rounded-full">Faol</span>
+          {% else %}<span class="badge-yoq text-xs font-bold px-3 py-1 rounded-full">Yo'q</span>{% endif %}
+          {% endwith %}
+        </div>
+        {% with t=driver.aktiv_tir %}
+        {% if t %}
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600"><span>Raqam:</span><span class="font-mono font-medium text-xs">{{ t.tir_raqam }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Boshlanish:</span><span class="font-medium">{{ t.boshlanish|date:"d.m.Y" }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Tugash:</span><span class="font-medium {% if t.is_expired %}text-red-600{% endif %}">{{ t.tugash|date:"d.m.Y" }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Narxi:</span><span class="font-bold text-green-600">{{ t.narxi|intcomma }} so'm</span></div>
+        </div>
+        {% else %}<p class="text-gray-400 text-sm text-center py-4">TIR yo'q</p>{% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Dazvol -->
+      <div class="doc-card bg-white rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl">📝</div>
+            <h4 class="font-heading font-bold text-gray-900">Dazvol</h4>
+          </div>
+          {% with dz=driver.aktiv_dazvol %}
+          {% if dz %}<span class="badge-faol text-xs font-bold px-3 py-1 rounded-full">Faol</span>
+          {% else %}<span class="badge-yoq text-xs font-bold px-3 py-1 rounded-full">Yo'q</span>{% endif %}
+          {% endwith %}
+        </div>
+        {% with dz=driver.aktiv_dazvol %}
+        {% if dz %}
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600"><span>Mamlakat:</span><span class="font-medium">{{ dz.mamlakat }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Tugash:</span><span class="font-medium {% if dz.is_expired %}text-red-600{% endif %}">{{ dz.tugash|date:"d.m.Y" }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Narxi:</span><span class="font-bold text-green-600">{{ dz.narxi|intcomma }} so'm</span></div>
+          {% if dz.qarz > 0 %}<div class="flex justify-between text-gray-600"><span>Qarz:</span><span class="font-bold text-red-600">{{ dz.qarz|intcomma }} so'm</span></div>{% endif %}
+        </div>
+        {% else %}<p class="text-gray-400 text-sm text-center py-4">Dazvol yo'q</p>{% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Litsenziya -->
+      <div class="doc-card bg-white rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center text-xl">🛡️</div>
+            <h4 class="font-heading font-bold text-gray-900">Litsenziya</h4>
+          </div>
+          {% with l=driver.aktiv_litsenziya %}
+          {% if l %}<span class="badge-faol text-xs font-bold px-3 py-1 rounded-full">Faol</span>
+          {% else %}<span class="badge-yoq text-xs font-bold px-3 py-1 rounded-full">Yo'q</span>{% endif %}
+          {% endwith %}
+        </div>
+        {% with l=driver.aktiv_litsenziya %}
+        {% if l %}
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600"><span>Raqam:</span><span class="font-mono font-medium text-xs">{{ l.litsenziya_raqam }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Tugash:</span><span class="font-medium {% if l.is_expired %}text-red-600{% endif %}">{{ l.tugash|date:"d.m.Y" }}</span></div>
+        </div>
+        {% else %}<p class="text-gray-400 text-sm text-center py-4">Litsenziya yo'q</p>{% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    {% with ij=driver.aktiv_ijara %}
+    {% if ij %}
+    <div class="doc-card bg-white rounded-2xl p-5 shadow-sm mt-4">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl">🏠</div>
+        <h4 class="font-heading font-bold text-gray-900">Ijara shartnomasi</h4>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div><p class="text-gray-400 text-xs">Manzil</p><p class="font-medium text-gray-800">{{ ij.manzil }}</p></div>
+        <div><p class="text-gray-400 text-xs">Boshlanish</p><p class="font-medium text-gray-800">{{ ij.boshlanish|date:"d.m.Y" }}</p></div>
+        <div><p class="text-gray-400 text-xs">Tugash</p><p class="font-medium text-gray-800">{{ ij.tugash|date:"d.m.Y" }}</p></div>
+        <div><p class="text-gray-400 text-xs">Narxi</p><p class="font-bold text-green-600">{{ ij.narxi|intcomma }} so'm</p></div>
+      </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <p class="text-center text-blue-200/30 text-xs mt-8">© 2026 Logistika UZ · Qo'qon, O'zbekiston</p>
+  </div>
+</div>
+{% endblock %}

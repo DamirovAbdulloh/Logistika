@@ -1,0 +1,45 @@
+{% extends 'admin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Chiqimlar{% endblock %}
+{% block page_title %}Chiqimlar{% endblock %}
+{% block page_subtitle %}Jami: {{ jami|intcomma }} so'm{% endblock %}
+{% block header_actions %}
+<a href="{% url 'admin_chiqim_add' %}" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700">+ Chiqim qo'shish</a>
+{% endblock %}
+{% block page_content %}
+<form method="GET" class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex gap-3 mb-4">
+  <input type="text" name="q" value="{{ search_q }}" placeholder="Driver yoki izoh..." class="flex-1 text-sm outline-none text-gray-700">
+  <button type="submit" class="text-blue-600 text-sm font-medium">Qidirish</button>
+</form>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-800 text-white"><tr>
+      <th class="px-4 py-3 text-left text-xs">Sana</th>
+      <th class="px-4 py-3 text-left text-xs">Driver</th>
+      <th class="px-4 py-3 text-left text-xs">Tur</th>
+      <th class="px-4 py-3 text-left text-xs">Summa</th>
+      <th class="px-4 py-3 text-left text-xs">Izoh</th>
+      <th class="px-4 py-3 text-center text-xs">Amal</th>
+    </tr></thead>
+    <tbody class="divide-y divide-gray-50">
+    {% for ch in chiqimlar %}
+    <tr class="hover:bg-gray-50">
+      <td class="px-4 py-2 text-gray-500 text-xs">{{ ch.sana|date:"d.m.Y" }}</td>
+      <td class="px-4 py-2 font-semibold text-gray-800 text-xs">{{ ch.driver.ism|default:"—" }}</td>
+      <td class="px-4 py-2 text-gray-600 text-xs">{{ ch.get_tur_display }}</td>
+      <td class="px-4 py-2 text-red-600 font-bold text-xs">{{ ch.summa|intcomma }} so'm</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">{{ ch.izoh|truncatechars:40 }}</td>
+      <td class="px-4 py-2 text-center">
+        <a href="{% url 'admin_chiqim_delete' ch.pk %}" class="text-red-500 text-xs hover:underline" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">Chiqimlar topilmadi</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% include 'admin/_pagination.html' with page_obj=chiqimlar %}
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Kirish — Logistika UZ{% endblock %}
+{% block extra_head %}
+<style>
+.bg-hero { background: linear-gradient(135deg,#0f2440 0%,#1a3a5c 60%,#0f2440 100%); min-height:100vh; }
+.bg-hero::before { content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 20% 50%,rgba(37,99,235,.15) 0%,transparent 60%); }
+.grid-line { position:absolute; inset:0;
+  background-image: linear-gradient(rgba(37,99,235,.07) 1px,transparent 1px),
+                    linear-gradient(90deg,rgba(37,99,235,.07) 1px,transparent 1px);
+  background-size:40px 40px; }
+.input-field { background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.15);
+  color:white; width:100%; padding:.75rem 1rem; border-radius:.75rem; font-size:.875rem;
+  outline:none; transition:.2s; box-sizing:border-box; }
+.input-field:focus { border-color:#2563eb; background:rgba(37,99,235,.12); }
+.input-field::placeholder { color:rgba(255,255,255,.4); }
+.input-field.error { border-color:#f87171 !important; background:rgba(248,113,113,.08) !important; }
+.field-error { color:#fca5a5; font-size:.72rem; margin-top:.3rem; display:none; }
+.field-error.show { display:block; }
+.tab-active { background:#2563eb; color:white; }
+.login-form { display:none; }
+.login-form.active { display:block; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.truck-float { animation:float 3s ease-in-out infinite; }
+.lang-btn { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.6); font-size:.7rem; padding:.25rem .6rem; border-radius:.5rem;
+  cursor:pointer; transition:.2s; }
+.lang-btn.active,.lang-btn:hover { background:rgba(37,99,235,.3); color:white; border-color:#2563eb; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="bg-hero relative flex items-center justify-center">
+  <div class="grid-line"></div>
+
+  <!-- Til tanlash -->
+  <div class="absolute top-4 right-6 flex gap-2 z-20">
+    <button class="lang-btn active" id="lang-uz" onclick="setLang('uz')">UZ</button>
+    <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">RU</button>
+  </div>
+
+  <div class="relative z-10 w-full max-w-md px-6 py-16">
+
+    <!-- Logo -->
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-2xl mb-4 shadow-xl truck-float">
+        <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-heading font-bold text-white">Logistika UZ</h1>
+      <p class="text-blue-300 text-sm mt-1" data-uz="Haydovchi va hujjatlaringizni bir joyda boshqaring" data-ru="Управляйте водителями и документами в одном месте">Haydovchi va hujjatlaringizni bir joyda boshqaring</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl">
+
+      <!-- Tabs -->
+      <div class="flex rounded-xl overflow-hidden border border-white/10 mb-7">
+        <button onclick="switchTab('admin')" id="tab-admin"
+          class="tab-btn flex-1 py-3 text-sm font-semibold text-white/60 tab-active transition-all"
+          data-uz="🔐 Admin" data-ru="🔐 Админ">
+          🔐 Admin
+        </button>
+        <button onclick="switchTab('driver')" id="tab-driver"
+          class="tab-btn flex-1 py-3 text-sm font-semibold text-white/60 transition-all"
+          data-uz="🚛 Haydovchi" data-ru="🚛 Водитель">
+          🚛 Haydovchi
+        </button>
+      </div>
+
+      <!-- Django messages -->
+      {% if messages %}
+        {% for msg in messages %}
+        <div class="mb-4 px-4 py-2 rounded-lg bg-red-500/20 text-red-300 text-sm text-center border border-red-500/30">
+          {{ msg }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Admin Form -->
+      <form id="form-admin" class="login-form active" method="POST" action="{% url 'login' %}" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="role" value="admin">
+        <div class="space-y-4">
+          <div>
+            <label class="text-blue-200 text-xs font-medium block mb-1.5" data-uz="Login" data-ru="Логин">Login</label>
+            <input type="text" name="username" placeholder="admin" class="input-field {% if messages %}{% for msg in messages %}error{% endfor %}{% endif %}" id="admin-username" required>
+            <p class="field-error {% if messages %}show{% endif %}" data-uz="Login yoki parol noto'g'ri" data-ru="Неверный логин или пароль">Login yoki parol noto'g'ri</p>
+          </div>
+          <div>
+            <label class="text-blue-200 text-xs font-medium block mb-1.5" data-uz="Parol" data-ru="Пароль">Parol</label>
+            <input type="password" name="password" placeholder="••••••••" class="input-field {% if messages %}{% for msg in messages %}error{% endfor %}{% endif %}" id="admin-password" required>
+          </div>
+          <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm mt-2 shadow-lg transition-all hover:shadow-blue-600/40"
+            data-uz="Kirish →" data-ru="Войти →">
+            Kirish →
+          </button>
+        </div>
+      </form>
+
+      <!-- Driver Form -->
+      <form id="form-driver" class="login-form" method="POST" action="{% url 'login' %}" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="role" value="driver">
+        <div class="space-y-4">
+          <div>
+            <label class="text-blue-200 text-xs font-medium block mb-1.5" data-uz="Telefon raqam" data-ru="Номер телефона">Telefon raqam</label>
+            <input type="text" name="telefon" id="driver-phone" placeholder="+998 90 123 45 67"
+              class="input-field {% if messages and request.POST.role == 'driver' %}error{% endif %}" required>
+            <p class="field-error {% if messages and request.POST.role == 'driver' %}show{% endif %}" data-uz="Telefon yoki parol noto'g'ri" data-ru="Неверный телефон или пароль">Telefon yoki parol noto'g'ri</p>
+          </div>
+          <div>
+            <label class="text-blue-200 text-xs font-medium block mb-1.5" data-uz="Parol" data-ru="Пароль">Parol</label>
+            <input type="password" name="parol" placeholder="••••••••"
+              class="input-field {% if messages and request.POST.role == 'driver' %}error{% endif %}" required>
+          </div>
+          <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm mt-2 shadow-lg transition-all"
+            data-uz="Kirish →" data-ru="Войти →">
+            Kirish →
+          </button>
+        </div>
+      </form>
+
+      <p class="text-center text-white/20 text-xs mt-7">© 2026 Logistika UZ · Qo'qon</p>
+    </div>
+  </div>
+</div>
+<script>
+var currentLang = localStorage.getItem('lang') || 'uz';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  document.querySelectorAll('[data-uz]').forEach(function(el) {
+    if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+      el.value = el.getAttribute('data-' + lang) || el.value;
+    } else {
+      el.textContent = el.getAttribute('data-' + lang);
+    }
+  });
+  document.getElementById('lang-uz').classList.toggle('active', lang === 'uz');
+  document.getElementById('lang-ru').classList.toggle('active', lang === 'ru');
+}
+
+function switchTab(role) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+  document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('tab-' + role).classList.add('tab-active');
+  document.getElementById('form-' + role).classList.add('active');
+}
+
+// Telefon maskasi: +998 XX XXX XX XX
+var phoneInput = document.getElementById('driver-phone');
+if (phoneInput) {
+  phoneInput.addEventListener('input', function(e) {
+    var digits = this.value.replace(/\D/g, '');
+    if (digits.startsWith('998')) digits = digits.slice(3);
+    if (digits.startsWith('0')) digits = digits.slice(1);
+    var formatted = '+998';
+    if (digits.length > 0) formatted += ' ' + digits.substring(0,2);
+    if (digits.length > 2) formatted += ' ' + digits.substring(2,5);
+    if (digits.length > 5) formatted += ' ' + digits.substring(5,7);
+    if (digits.length > 7) formatted += ' ' + digits.substring(7,9);
+    this.value = formatted;
+  });
+  phoneInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value === '+998') {
+      e.preventDefault();
+    }
+  });
+  phoneInput.addEventListener('focus', function() {
+    if (!this.value) this.value = '+998 ';
+  });
+}
+
+// Keep active tab after error + apply lang
+{% if request.POST.role == 'driver' %}switchTab('driver');{% endif %}
+setLang(currentLang);
+</script>
+{% endblock %}
