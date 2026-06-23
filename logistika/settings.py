@@ -12,6 +12,13 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-produc
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# Railway/Render kabi platformalar HTTPS orqali ishlaydi - Django'ga
+# bu domenlardan kelgan POST so'rovlariga (login, forma yuborish) ishonish kerakligini aytamiz.
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://*.up.railway.app,https://*.onrender.com'
+).split(',')
+
 ESKIZ_EMAIL = "mustafo8601@gmail.com"
 ESKIZ_PASSWORD = "zei8nfeJPmgyMSNnWKQvU39TqYnsI06ulOQnbsCB"
 ESKIZ_TEST_MODE = os.environ.get('ESKIZ_TEST_MODE', 'True') == 'True'
