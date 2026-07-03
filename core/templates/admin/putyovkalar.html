@@ -106,7 +106,7 @@
                 <a href="{% url 'admin_putyovka_activate' p.pk %}" onclick="return confirm('Faollashtirilsinmi?')"
                    class="text-[10px] px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700">▶ Faollashtirish</a>
               {% else %}
-                <a href="{% url 'admin_putyovka_delete' p.pk %}" onclick="return confirm('Tugatilsinmi?')"
+                <a href="{% url 'admin_putyovka_finish' p.pk %}" onclick="return confirm('Tugatilsinmi?')"
                    class="text-[10px] px-2 py-0.5 rounded bg-yellow-500 text-white hover:bg-yellow-600">■ Tugatish</a>
               {% endif %}
             </div>
@@ -139,8 +139,11 @@
                 <div class="sep"></div>
                 {% if p.status == 'tugagan' %}<a href="{% url 'admin_putyovka_activate' p.pk %}" style="color:#059669" onclick="return confirm('Faollashtirilsinmi?')">✓ Faollashtirish</a>
                 <div class="sep"></div>
+                {% else %}
+                <a href="{% url 'admin_putyovka_finish' p.pk %}" onclick="return confirm('Tugatilsinmi?')">■ Tugatish</a>
+                <div class="sep"></div>
                 {% endif %}
-                <a href="{% url 'admin_putyovka_delete' p.pk %}" class="danger" onclick="return confirm('Tugatilsinmi?')">
+                <a href="{% url 'admin_putyovka_delete' p.pk %}" class="danger" onclick="return confirm('Putyovka butunlay o\'chiriladi. Bu amalni orqaga qaytarib bo\'lmaydi. Davom etilsinmi?')">
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   O'chirish
                 </a>

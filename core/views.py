@@ -194,7 +194,11 @@ def admin_dashboard(request):
     for d in Dazvol.objects.filter(tugash__lt=today).exclude(status='tugagan').select_related('driver')[:10]:
         expired_docs.append({'ism': d.driver.ism, 'tur': 'Dazvol', 'driver_id': d.driver.id})
 
-    expired_count = len(expired_docs)
+    expired_count = (
+        Putyovka.objects.filter(tugash__lt=today, status='faol').count() +
+        TIR.objects.filter(tugash__lt=today).exclude(status='tugagan').count() +
+        Dazvol.objects.filter(tugash__lt=today).exclude(status='tugagan').count()
+    )
 
     from django.urls import reverse
     stat_cards = [
@@ -430,11 +434,18 @@ def admin_putyovka_edit(request, pk):
 
 
 @admin_required
-def admin_putyovka_delete(request, pk):
+def admin_putyovka_finish(request, pk):
     putyovka = get_object_or_404(Putyovka, pk=pk)
     putyovka.status = 'tugagan'
     putyovka.save()
     messages.success(request, "Putyovka tugallandi!")
+    return redirect('admin_putyovkalar')
+
+
+@admin_required
+def admin_putyovka_delete(request, pk):
+    get_object_or_404(Putyovka, pk=pk).delete()
+    messages.success(request, "Putyovka o'chirildi!")
     return redirect('admin_putyovkalar')
 
 
@@ -456,7 +467,8 @@ def admin_putyovka_tolov(request, pk):
     else:
         form = TolovForm()
     return render(request, 'admin/tolov_form.html', {
-        'form': form, 'obj': putyovka, 'title': f"Putyovka to'lovi — {putyovka.driver.ism}"
+        'form': form, 'obj': putyovka, 'title': f"Putyovka to'lovi — {putyovka.driver.ism}",
+        'back_url': 'admin_putyovkalar'
     })
 
 
@@ -1166,7 +1178,7 @@ def admin_tir_tolov(request, pk):
             messages.success(request,"To'lov qabul qilindi!")
             return redirect('admin_tirlar')
     else: form=TolovForm()
-    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"TIR to'lovi — {obj.driver.ism}"})
+    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"TIR to'lovi — {obj.driver.ism}",'back_url':'admin_tirlar'})
 
 @admin_required
 def admin_dazvol_tolov(request, pk):
@@ -1176,9 +1188,10 @@ def admin_dazvol_tolov(request, pk):
         if form.is_valid():
             summa=form.cleaned_data['summa']; obj.tolangan+=summa; obj.save()
             TolovQayd.objects.create(driver=obj.driver,tur='dazvol',summa=summa,izoh=form.cleaned_data.get('izoh',''))
+            messages.success(request, f"{summa:,.0f} so'm to'lov qabul qilindi!")
             return redirect('admin_dazvollar')
     else: form=TolovForm()
-    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Dazvol to'lovi — {obj.driver.ism}"})
+    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Dazvol to'lovi — {obj.driver.ism}",'back_url':'admin_dazvollar'})
 
 @admin_required
 def admin_litsenziya_tolov(request, pk):
@@ -1188,9 +1201,10 @@ def admin_litsenziya_tolov(request, pk):
         if form.is_valid():
             summa=form.cleaned_data['summa']; obj.tolangan+=summa; obj.save()
             TolovQayd.objects.create(driver=obj.driver,tur='litsenziya',summa=summa,izoh=form.cleaned_data.get('izoh',''))
+            messages.success(request, f"{summa:,.0f} so'm to'lov qabul qilindi!")
             return redirect('admin_litsenziyalar')
     else: form=TolovForm()
-    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Litsenziya to'lovi — {obj.driver.ism}"})
+    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Litsenziya to'lovi — {obj.driver.ism}",'back_url':'admin_litsenziyalar'})
 
 @admin_required
 def admin_ijara_tolov(request, pk):
@@ -1200,6 +1214,7 @@ def admin_ijara_tolov(request, pk):
         if form.is_valid():
             summa=form.cleaned_data['summa']; obj.tolangan+=summa; obj.save()
             TolovQayd.objects.create(driver=obj.driver,tur='ijara',summa=summa,izoh=form.cleaned_data.get('izoh',''))
+            messages.success(request, f"{summa:,.0f} so'm to'lov qabul qilindi!")
             return redirect('admin_ijara')
     else: form=TolovForm()
-    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Ijara to'lovi — {obj.driver.ism}"})
+    return render(request,'admin/tolov_form.html',{'form':form,'obj':obj,'title':f"Ijara to'lovi — {obj.driver.ism}",'back_url':'admin_ijara'})

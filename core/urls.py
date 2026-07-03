@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/putyovkalar/add/', views.admin_putyovka_add, name='admin_putyovka_add'),
     path('admin/putyovkalar/<int:pk>/edit/', views.admin_putyovka_edit, name='admin_putyovka_edit'),
     path('admin/putyovkalar/<int:pk>/delete/', views.admin_putyovka_delete, name='admin_putyovka_delete'),
+    path('admin/putyovkalar/<int:pk>/finish/', views.admin_putyovka_finish, name='admin_putyovka_finish'),
     path('admin/putyovkalar/<int:pk>/tolov/', views.admin_putyovka_tolov, name='admin_putyovka_tolov'),
     path('admin/putyovkalar/<int:pk>/word/', views.putyovka_word, name='putyovka_word'),
     path('admin/putyovkalar/<int:pk>/activate/', views.admin_putyovka_activate, name='admin_putyovka_activate'),

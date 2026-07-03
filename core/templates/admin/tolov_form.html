@@ -37,7 +37,7 @@
           class="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors text-center">
           ✅ To'lovni qabul qilish
         </button>
-        <a href="{% url 'admin_putyovkalar' %}"
+        <a href="{% url back_url|default:'admin_putyovkalar' %}"
           class="flex-1 sm:flex-none px-6 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors text-center">
           Bekor
         </a>

@@ -80,16 +80,17 @@ tr.hidden-row { display: none; }
   </div>
 </div>
 
-<!-- Real-time Search -->
-<div class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-3 mb-4">
+<!-- Real-time Search (server-side — barcha haydovchilar bo'yicha, sahifalardan qat'i nazar) -->
+<form method="GET" id="search-form" class="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-3 mb-4">
   <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
   </svg>
-  <input type="text" id="live-search" value="{{ search_q }}" placeholder="Ism, telefon, mashina yoki raqam bo'yicha qidiring..."
+  <input type="text" name="q" id="live-search" value="{{ search_q }}" placeholder="Ism, telefon, mashina yoki raqam bo'yicha qidiring..."
     class="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400"
-    oninput="liveSearch(this.value)">
-  <span id="search-count" class="text-xs text-gray-400"></span>
-</div>
+    autocomplete="off">
+  <span id="search-count" class="text-xs text-gray-400">{% if search_q %}{{ drivers.paginator.count }} ta topildi{% endif %}</span>
+  <button type="submit" class="text-blue-600 text-sm font-medium">Qidirish</button>
+</form>
 
 <!-- Table -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -107,11 +108,7 @@ tr.hidden-row { display: none; }
       </thead>
       <tbody class="divide-y divide-gray-50" id="drivers-tbody">
         {% for d in drivers %}
-        <tr class="hover:bg-gray-50 transition-colors driver-row"
-          data-name="{{ d.ism|lower }}"
-          data-phone="{{ d.telefon|lower }}"
-          data-car="{{ d.mashina|lower }}"
-          data-plate="{{ d.raqam|lower }}">
+        <tr class="hover:bg-gray-50 transition-colors driver-row">
           <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ d.id }}</td>
           <td class="px-4 py-3 font-semibold text-gray-800">
             <a href="{% url 'admin_driver_detail' d.pk %}" class="hover:text-blue-600">{{ d.ism }}</a>
@@ -182,9 +179,6 @@ tr.hidden-row { display: none; }
     </table>
   </div>
 </div>
-
-<!-- No results message -->
-<div id="no-results" class="hidden text-center py-10 text-gray-400 text-sm">Qidiruv natijasi topilmadi</div>
 
 {% include 'admin/_pagination.html' with page_obj=drivers %}
 
@@ -270,32 +264,17 @@ function openDoverModal(driverId, driverName, pasport) {
 }
 
 
-// Real-time qidiruv
-function liveSearch(q) {
-  var val = q.toLowerCase().trim();
-  var rows = document.querySelectorAll('.driver-row');
-  var visible = 0;
-  rows.forEach(function(row) {
-    var name = row.getAttribute('data-name') || '';
-    var phone = row.getAttribute('data-phone') || '';
-    var car = row.getAttribute('data-car') || '';
-    var plate = row.getAttribute('data-plate') || '';
-    var match = !val || name.includes(val) || phone.includes(val) || car.includes(val) || plate.includes(val);
-    row.style.display = match ? '' : 'none';
-    if (match) visible++;
-  });
-  var countEl = document.getElementById('search-count');
-  if (val) {
-    countEl.textContent = visible + ' ta topildi';
-  } else {
-    countEl.textContent = '';
-  }
-  var noRes = document.getElementById('no-results');
-  if (noRes) noRes.classList.toggle('hidden', visible > 0 || !val);
-}
-
-// Sahifa yuklanganda agar qidiruv qiymati bo'lsa
-var initQ = document.getElementById('live-search').value;
-if (initQ) liveSearch(initQ);
+// Qidiruv — debounce bilan avtomatik yuborish (barcha haydovchilar bo'yicha, serverga)
+var searchTimer = null;
+var searchInput = document.getElementById('live-search');
+var searchForm = document.getElementById('search-form');
+searchInput.addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  var val = searchInput.value;
+  searchTimer = setTimeout(function() {
+    // Yangi qidiruvda har doim 1-sahifadan boshlaymiz
+    searchForm.submit();
+  }, 450);
+});
 </script>
 {% endblock %}

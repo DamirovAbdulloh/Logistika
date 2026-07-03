@@ -1,13 +1,13 @@
 {% if page_obj.has_other_pages %}
 <div class="flex items-center justify-center gap-2 mt-5">
   {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm hover:bg-blue-50">←</a>
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm hover:bg-blue-50">←</a>
   {% endif %}
   {% for i in page_obj.paginator.page_range %}
-  <a href="?page={{ i }}" class="px-3 py-1.5 rounded-lg text-sm {% if page_obj.number == i %}bg-blue-600 text-white{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-blue-50{% endif %}">{{ i }}</a>
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ i }}" class="px-3 py-1.5 rounded-lg text-sm {% if page_obj.number == i %}bg-blue-600 text-white{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-blue-50{% endif %}">{{ i }}</a>
   {% endfor %}
   {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm hover:bg-blue-50">→</a>
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm hover:bg-blue-50">→</a>
   {% endif %}
 </div>
 {% endif %}
