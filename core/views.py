@@ -860,6 +860,8 @@ def putyovka_word(request, pk):
         )
         safe_name = putyovka.driver.ism.replace(' ', '_')
         response['Content-Disposition'] = f'attachment; filename="putyovka_{safe_name}_{putyovka.id}.docx"'
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
         return response
     except Exception as e:
         messages.error(request, f"Xatolik: {e}")
@@ -891,7 +893,9 @@ def driver_blanka_word(request, pk):
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         safe_name = driver.ism.replace(' ', '_')
-        response['Content-Disposition'] = f'attachment; filename="blanka_{safe_name}.docx"'
+        response['Content-Disposition'] = f'attachment; filename="blanka_{safe_name}_{driver.pk}.docx"'
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
         return response
     except Exception as e:
         messages.error(request, f"Xatolik: {e}")
@@ -948,7 +952,9 @@ def driver_doverennost_word(request, pk):
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         safe_name = driver.ism.replace(' ', '_')
-        response['Content-Disposition'] = f'attachment; filename="doverennost_{safe_name}.docx"'
+        response['Content-Disposition'] = f'attachment; filename="doverennost_{safe_name}_{driver.pk}.docx"'
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
         return response
     except Exception as e:
         messages.error(request, f"Xatolik: {e}")
