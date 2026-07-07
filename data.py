@@ -546,33 +546,34 @@ print('0) Admin foydalanuvchini import qilish...')
 print('=' * 60)
 
 UserModel = get_user_model()
-
 for u in USERS:
     if u['role'] != 'admin':
         continue
 
-    username = u['email'].split('@')[0]  # yoki xohlasangiz to'liq email
+    username = u['email'].split('@')[0]
 
-    admin_user, created = UserModel.objects.get_or_create(
-        email=u['email'],
-        defaults=dict(
+    admin_user = UserModel.objects.filter(email=u['email']).first() \
+        or UserModel.objects.filter(username=username).first()
+
+    if admin_user is None:
+        admin_user = UserModel(
             username=username,
+            email=u['email'],
             first_name=u['name'] or 'Admin',
             is_staff=True,
             is_superuser=True,
             is_active=True,
-        ),
-    )
-
-    if created:
-        # SQL dumpdagi parol hash Laravel (bcrypt) formatida, Django buni
-        # to'g'ridan-to'g'ri tushunmaydi, shuning uchun vaqtinchalik parol
-        # o'rnatamiz -- keyin admin buni o'zgartirishi kerak.
+        )
         admin_user.set_password('admin12345')
         admin_user.save()
         print(f'  Yangi admin yaratildi: {admin_user.email} (parol: admin12345)')
     else:
-        print(f'  Admin allaqachon mavjud: {admin_user.email}')
+        # Mavjud userni yangilaymiz, lekin parolni qayta o'rnatmaymiz
+        admin_user.email = u['email']
+        admin_user.is_staff = True
+        admin_user.is_superuser = True
+        admin_user.save()
+        print(f'  Admin allaqachon mavjud, yangilandi: {admin_user.username}')
 
 print()
 
