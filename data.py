@@ -22,7 +22,7 @@ from datetime import datetime, date
 from decimal import Decimal
 
 from core.models import Driver, Putyovka, TIR, Dazvol, Litsenziya, IjaraShartnoma, Chiqim, TolovQayd
-
+from django.contrib.auth import get_user_model
 
 # ──────────────────────────────────────────────────────────────────────────
 #  RAW DATA (logist10_logistika__4_.sql dan import qilingan)
